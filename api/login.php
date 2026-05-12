@@ -10,8 +10,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit();
 }
 
-session_start();
-
 require_once("../conexion/config.php");
 
 $data = json_decode(file_get_contents("php://input"), true);
@@ -23,82 +21,70 @@ if(empty($dni) || empty($password)){
 
     echo json_encode([
         "success" => false,
-        "mensaje" => "Campos vacíos"
+        "mensaje" => "Complete todos los campos"
     ]);
-
     exit;
 }
 
 try {
 
-    # Buscar primero en administrador
+    // ADMIN
     $sql = "SELECT * FROM administrador WHERE dni = ?";
     $stmt = $conexion->prepare($sql);
     $stmt->execute([$dni]);
 
     $usuario = $stmt->fetch();
 
-    $rol = "Administrador";
-
-    # Si no existe, buscar en médicos
-    if(!$usuario){
-
-        $sql = "SELECT * FROM medico WHERE dni = ?";
-        $stmt = $conexion->prepare($sql);
-        $stmt->execute([$dni]);
-
-        $usuario = $stmt->fetch();
-
-        $rol = "Doctor";
-    }
-
-    # Si no existe, buscar admisión
-    if(!$usuario){
-
-        $sql = "SELECT * FROM personal_admision WHERE dni = ?";
-        $stmt = $conexion->prepare($sql);
-        $stmt->execute([$dni]);
-
-        $usuario = $stmt->fetch();
-
-        $rol = "Admision";
-    }
-
-    if(!$usuario){
+    if($usuario && password_verify($password, $usuario['clave_hash'])){
 
         echo json_encode([
-            "success" => false,
-            "mensaje" => "Usuario no encontrado"
+            "success" => true,
+            "rol" => "Admin"
         ]);
-
         exit;
     }
 
-    # Verificar contraseña hasheada
-    if(!password_verify($password, $usuario['clave_hash'])){
+    // DOCTOR
+    $sql = "SELECT * FROM medico WHERE dni = ?";
+    $stmt = $conexion->prepare($sql);
+    $stmt->execute([$dni]);
+
+    $usuario = $stmt->fetch();
+
+    if($usuario && password_verify($password, $usuario['clave_hash'])){
 
         echo json_encode([
-            "success" => false,
-            "mensaje" => "Contraseña incorrecta"
+            "success" => true,
+            "rol" => "Doctor"
         ]);
-
         exit;
     }
 
-    # Crear sesión
-    $_SESSION['usuario'] = $usuario['dni'];
-    $_SESSION['rol'] = $rol;
+    // ADMISION
+    $sql = "SELECT * FROM personal_admision WHERE dni = ?";
+    $stmt = $conexion->prepare($sql);
+    $stmt->execute([$dni]);
+
+    $usuario = $stmt->fetch();
+
+    if($usuario && password_verify($password, $usuario['clave_hash'])){
+
+        echo json_encode([
+            "success" => true,
+            "rol" => "Admision"
+        ]);
+        exit;
+    }
 
     echo json_encode([
-        "success" => true,
-        "mensaje" => "Login exitoso",
-        "rol" => $rol
+        "success" => false,
+        "mensaje" => "Credenciales incorrectas"
     ]);
 
 } catch(PDOException $e){
 
     echo json_encode([
         "success" => false,
-        "mensaje" => $e->getMessage()
+        "mensaje" => "Error del servidor"
     ]);
 }

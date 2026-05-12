@@ -1,18 +1,82 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const InicioSesion = () => {
   const [dni, setDni] = useState('');
   const [contraseña, setContraseña] = useState('');
   const [cargando, setCargando] = useState(false);
+  const navigate = useNavigate();
+  const [mensaje, setMensaje] = useState('');
+  const [tipoMensaje, setTipoMensaje] = useState('');
 
-  const manejarLogin = (e) => {
-    e.preventDefault();
-    setCargando(true);
-    setTimeout(() => {
-      console.log('Usuario logueado con DNI:', dni);
-      setCargando(false);
-    }, 1000);
-  };
+  const manejarLogin = async (e) => {
+
+  e.preventDefault();
+
+  setCargando(true);
+
+  try {
+
+    const respuesta = await fetch(
+      "http://localhost/Triaje-main/api/login.php",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          dni,
+          password: contraseña,
+        }),
+      }
+    );
+
+    const data = await respuesta.json();
+
+    if(data.success){
+
+      // ADMIN
+      if(data.rol === "Admin"){
+
+        navigate("/registro");
+
+      }
+
+      // DOCTOR
+      else if(data.rol === "Doctor"){
+
+        navigate("/dashboard-medico");
+
+      }
+
+      // ADMISION
+      else if(data.rol === "Admision"){
+
+        navigate("/admision");
+
+      }
+
+      // PACIENTE
+      else {
+
+        navigate("/signos");
+
+      }
+
+    } else {
+
+      alert(data.mensaje);
+
+    }
+
+  } catch(error){
+
+    alert("Error del servidor");
+
+  }
+
+  setCargando(false);
+};
 
   return (
     <div style={estilos.pagina}>
@@ -21,6 +85,33 @@ const InicioSesion = () => {
           <div style={estilos.icono}>⚕</div>
           <h2 style={estilos.titulo}>Bienvenido</h2>
           <p style={estilos.subtitulo}>Sistema de triaje inteligente</p>
+          {
+  mensaje && (
+    <div
+      style={{
+        marginTop: '15px',
+        padding: '12px',
+        borderRadius: '8px',
+        fontSize: '14px',
+        fontWeight: '600',
+        background:
+          tipoMensaje === 'success'
+            ? '#dcfce7'
+            : '#fee2e2',
+        color:
+          tipoMensaje === 'success'
+            ? '#166534'
+            : '#991b1b',
+        border:
+          tipoMensaje === 'success'
+            ? '1px solid #86efac'
+            : '1px solid #fca5a5',
+      }}
+    >
+      {mensaje}
+    </div>
+  )
+}
         </div>
 
         <form onSubmit={manejarLogin} style={estilos.formulario}>
@@ -55,7 +146,8 @@ const InicioSesion = () => {
 
         <p style={estilos.pie}>
           ¿No tienes cuenta?{' '}
-          <a href="/" style={estilos.enlace}>Regístrate aquí</a>
+          <a href="/registro" style={estilos.enlace}>Regístrate aquí
+          </a>
         </p>
       </div>
     </div>

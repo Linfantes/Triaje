@@ -6,6 +6,10 @@ const Admision = () => {
   const [apellido, setApellido] = useState('');
   const [fechaNacimiento, setFechaNacimiento] = useState('');
 
+  const [mensaje, setMensaje] = useState('');
+  const [tipoMensaje, setTipoMensaje] = useState('');
+  const [doctores, setDoctores] = useState([]);
+
   const [doctor, setDoctor] = useState('');
   const [fechaCita, setFechaCita] = useState('');
   const [horaCita, setHoraCita] = useState('');
@@ -20,26 +24,86 @@ const Admision = () => {
 
 
 
-  const manejarEnvio = (e) => {
-    e.preventDefault();
-    console.log('Paciente registrado:', { dni, nombre, apellido, fechaNacimiento, doctor, fechaCita, horaCita });
-    setEnviado(true);
-    setTimeout(() => {
-      setDni(''); setNombre(''); setApellido(''); setFechaNacimiento('');
-      setDoctor(''); setFechaCita(''); setHoraCita('');
-      setEnviado(false);
-    }, 2500);
-  };
+  const manejarEnvio = async (e) => {
 
-  const doctores = [
-    'Dr. García - Medicina General',
-    'Dra. López - Pediatría',
-    'Dr. Ramírez - Cardiología',
-    'Dra. Torres - Ginecología',
-    'Dr. Flores - Traumatología',
-    'Dra. Mendoza - Neurología',
-    'Dr. Castillo - Dermatología',
-  ];
+  e.preventDefault();
+
+  try {
+
+    const respuesta = await fetch(
+      "http://localhost/Triaje-main/api/registrar_paciente.php",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          dni,
+          nombre,
+          apellido,
+          fechaNacimiento,
+          doctor,
+          fechaCita,
+          horaCita,
+        }),
+      }
+    );
+
+    const data = await respuesta.json();
+
+    if(data.success){
+
+      setTipoMensaje('success');
+      setMensaje(data.mensaje);
+
+      setDni('');
+      setNombre('');
+      setApellido('');
+      setFechaNacimiento('');
+      setDoctor('');
+      setFechaCita('');
+      setHoraCita('');
+
+    } else {
+
+      setTipoMensaje('error');
+      setMensaje(data.mensaje);
+    }
+
+  } catch(error){
+
+    setTipoMensaje('error');
+    setMensaje('Error del servidor');
+  }
+};
+  useEffect(() => {
+
+  obtenerDoctores();
+
+}, []);
+
+const obtenerDoctores = async () => {
+
+  try {
+
+    const respuesta = await fetch(
+      "http://localhost/Triaje-main/api/obtener_doctores.php"
+    );
+
+    const data = await respuesta.json();
+
+    if(data.success){
+
+      setDoctores(data.doctores);
+
+    }
+
+  } catch(error){
+
+    console.log(error);
+
+  }
+};
 
   return (
     <div style={estilos.pagina}>
@@ -137,7 +201,17 @@ const Admision = () => {
               <label style={estilos.etiqueta}>Doctor Asignado</label>
               <select value={doctor} onChange={(e) => setDoctor(e.target.value)} required style={estilos.select}>
                 <option value="">Seleccione un doctor...</option>
-                {doctores.map((d) => <option key={d} value={d}>{d}</option>)}
+                {doctores.map((d) => (
+                <option
+                key={d.idMedico}
+                value={d.idMedico}
+                  >
+
+                {d.nombre} {d.apellido} - {d.especialidad}
+
+                  </option>
+
+))}
               </select>
             </div>
 

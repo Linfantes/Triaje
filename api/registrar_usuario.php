@@ -129,8 +129,20 @@ try {
 
 } catch(PDOException $e){
 
-    echo json_encode([
-        "success" => false,
-        "mensaje" => $e->getMessage()
-    ]);
+    if($e->getCode() == 23000){
+
+        echo json_encode([
+            "success" => false,
+            "mensaje" => "El DNI ya se encuentra registrado"
+        ]);
+
+    } else {
+
+        echo json_encode([
+            "success" => false,
+            "mensaje" => "Error interno del servidor"
+        ]);
+
+    }
+
 }

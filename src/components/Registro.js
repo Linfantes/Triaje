@@ -4,6 +4,8 @@ const Registro = () => {
   const [rol, setRol] = useState('Doctor');
   const [dni, setDni] = useState('');
   const [contraseña, setContraseña] = useState('');
+  const [mensaje, setMensaje] = useState('');
+  const [tipoMensaje, setTipoMensaje] = useState('');
   const [esMobil, setEsMobil] = useState(window.innerWidth < 768);
 
   useEffect(() => {
@@ -12,11 +14,58 @@ const Registro = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const manejarEnvio = (e) => {
-    e.preventDefault();
-    console.log('Usuario registrado:', { rol, dni, contraseña });
-  };
+  const manejarEnvio = async (e) => {
 
+  e.preventDefault();
+
+  try {
+
+    const respuesta = await fetch(
+      "http://localhost/Triaje-main/api/registrar_usuario.php",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          rol: rol,
+          dni: dni,
+          password: contraseña
+        })
+      }
+    );
+
+    const data = await respuesta.json();
+
+    console.log(data);
+
+    if(data.success){
+      setTimeout(() => {
+      setMensaje("Usuario registrado correctamente");
+      setTipoMensaje("success");
+      }, 3000);
+
+      setDni('');
+      setContraseña('');
+
+    } else {
+      setTimeout(() => {
+      setMensaje(data.mensaje);
+      setTipoMensaje("error");
+      }, 3000);
+    }
+
+  } catch(error){
+
+    console.error(error);
+    setTimeout(() => {
+    setMensaje("Error del servidor");
+    setTipoMensaje("error");
+    }, 3000);
+
+  }
+
+};
   const roles = [
     { id: 'Doctor', label: 'Doctor', icono: '👨‍⚕️' },
     { id: 'Admision', label: 'Admisión', icono: '🗂️' },
@@ -92,6 +141,33 @@ const Registro = () => {
           <div style={estilos.encabezado}>
             <h2 style={{ ...estilos.titulo, fontSize: esMobil ? '24px' : '28px' }}>Crear cuenta</h2>
             <p style={estilos.subtitulo}>Registra tus datos para acceder al sistema</p>
+            {
+  mensaje && (
+    <div
+      style={{
+        padding: '12px',
+        borderRadius: '10px',
+        marginTop: '15px',
+        fontSize: '14px',
+        fontWeight: '600',
+        background:
+          tipoMensaje === 'success'
+            ? '#dcfce7'
+            : '#fee2e2',
+        color:
+          tipoMensaje === 'success'
+            ? '#166534'
+            : '#991b1b',
+        border:
+          tipoMensaje === 'success'
+            ? '1px solid #86efac'
+            : '1px solid #fca5a5',
+      }}
+    >
+      {mensaje}
+    </div>
+  )
+}
           </div>
 
           <form onSubmit={manejarEnvio} style={estilos.formulario}>
@@ -158,7 +234,9 @@ const Registro = () => {
 
           <p style={estilos.pie}>
             ¿Ya tienes cuenta?{' '}
-            <a href="/login" style={estilos.enlace}>Inicia sesión aquí</a>
+            <a href="/" style={estilos.enlace}>
+            Inicia sesión aquí
+            </a>
           </p>
         </div>
       </div>
