@@ -3,6 +3,9 @@ import React, { useState, useEffect } from 'react';
 const Registro = () => {
   const [rol, setRol] = useState('Doctor');
   const [dni, setDni] = useState('');
+  const [nombre, setNombre] = useState('');
+  const [apellido, setApellido] = useState('');
+  const [especialidad, setEspecialidad] = useState('');
   const [contraseña, setContraseña] = useState('');
   const [mensaje, setMensaje] = useState('');
   const [tipoMensaje, setTipoMensaje] = useState('');
@@ -16,56 +19,59 @@ const Registro = () => {
 
   const manejarEnvio = async (e) => {
 
-  e.preventDefault();
+    e.preventDefault();
 
-  try {
+    try {
 
-    const respuesta = await fetch(
-      "http://localhost/Triaje-main/api/registrar_usuario.php",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          rol: rol,
-          dni: dni,
-          password: contraseña
-        })
+      const respuesta = await fetch(
+        "http://localhost/Triaje-main/api/registrar_usuario.php",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            rol,
+            dni,
+            password: contraseña,
+            nombre,
+            apellido,
+            especialidad
+          })
+        }
+      );
+
+      const data = await respuesta.json();
+
+      console.log(data);
+
+      if (data.success) {
+        setTimeout(() => {
+          setMensaje("Usuario registrado correctamente");
+          setTipoMensaje("success");
+        }, 3000);
+
+        setDni('');
+        setContraseña('');
+
+      } else {
+        setTimeout(() => {
+          setMensaje(data.mensaje);
+          setTipoMensaje("error");
+        }, 3000);
       }
-    );
 
-    const data = await respuesta.json();
+    } catch (error) {
 
-    console.log(data);
-
-    if(data.success){
+      console.error(error);
       setTimeout(() => {
-      setMensaje("Usuario registrado correctamente");
-      setTipoMensaje("success");
+        setMensaje("Error del servidor");
+        setTipoMensaje("error");
       }, 3000);
 
-      setDni('');
-      setContraseña('');
-
-    } else {
-      setTimeout(() => {
-      setMensaje(data.mensaje);
-      setTipoMensaje("error");
-      }, 3000);
     }
 
-  } catch(error){
-
-    console.error(error);
-    setTimeout(() => {
-    setMensaje("Error del servidor");
-    setTipoMensaje("error");
-    }, 3000);
-
-  }
-
-};
+  };
   const roles = [
     { id: 'Doctor', label: 'Doctor', icono: '👨‍⚕️' },
     { id: 'Admision', label: 'Admisión', icono: '🗂️' },
@@ -142,32 +148,32 @@ const Registro = () => {
             <h2 style={{ ...estilos.titulo, fontSize: esMobil ? '24px' : '28px' }}>Crear cuenta</h2>
             <p style={estilos.subtitulo}>Registra tus datos para acceder al sistema</p>
             {
-  mensaje && (
-    <div
-      style={{
-        padding: '12px',
-        borderRadius: '10px',
-        marginTop: '15px',
-        fontSize: '14px',
-        fontWeight: '600',
-        background:
-          tipoMensaje === 'success'
-            ? '#dcfce7'
-            : '#fee2e2',
-        color:
-          tipoMensaje === 'success'
-            ? '#166534'
-            : '#991b1b',
-        border:
-          tipoMensaje === 'success'
-            ? '1px solid #86efac'
-            : '1px solid #fca5a5',
-      }}
-    >
-      {mensaje}
-    </div>
-  )
-}
+              mensaje && (
+                <div
+                  style={{
+                    padding: '12px',
+                    borderRadius: '10px',
+                    marginTop: '15px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    background:
+                      tipoMensaje === 'success'
+                        ? '#dcfce7'
+                        : '#fee2e2',
+                    color:
+                      tipoMensaje === 'success'
+                        ? '#166534'
+                        : '#991b1b',
+                    border:
+                      tipoMensaje === 'success'
+                        ? '1px solid #86efac'
+                        : '1px solid #fca5a5',
+                  }}
+                >
+                  {mensaje}
+                </div>
+              )
+            }
           </div>
 
           <form onSubmit={manejarEnvio} style={estilos.formulario}>
@@ -191,7 +197,48 @@ const Registro = () => {
                 ))}
               </div>
             </div>
+            <div style={estilos.grupo}>
+              <label style={estilos.etiqueta}>Nombre</label>
+              <input
+                type="text"
+                placeholder="Ingrese nombres"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                required
+                style={estilos.input}
+              />
+            </div>
 
+            <div style={estilos.grupo}>
+              <label style={estilos.etiqueta}>Apellido</label>
+              <input
+                type="text"
+                placeholder="Ingrese apellidos"
+                value={apellido}
+                onChange={(e) => setApellido(e.target.value)}
+                required
+                style={estilos.input}
+              />
+            </div>
+            {rol === 'Doctor' && (
+              <div style={estilos.grupo}>
+                <label style={estilos.etiqueta}>Especialidad</label>
+
+                <select
+                  value={especialidad}
+                  onChange={(e) => setEspecialidad(e.target.value)}
+                  required
+                  style={estilos.select}
+                >
+                  <option value="">Seleccione</option>
+                  <option value="Cardiología">Cardiología</option>
+                  <option value="Pediatría">Pediatría</option>
+                  <option value="Neurología">Neurología</option>
+                  <option value="Traumatología">Traumatología</option>
+                  <option value="Medicina General">Medicina General</option>
+                </select>
+              </div>
+            )}
             <div style={estilos.grupo}>
               <label style={estilos.etiqueta}>DNI</label>
               <input
@@ -235,7 +282,7 @@ const Registro = () => {
           <p style={estilos.pie}>
             ¿Ya tienes cuenta?{' '}
             <a href="/" style={estilos.enlace}>
-            Inicia sesión aquí
+              Inicia sesión aquí
             </a>
           </p>
         </div>
@@ -437,6 +484,17 @@ const estilos = {
     background: '#fff',
     outline: 'none',
     transition: 'border-color 0.2s',
+    width: '100%',
+    boxSizing: 'border-box',
+  },
+  select: {
+    padding: '13px 16px',
+    border: '2px solid #e2e8f0',
+    borderRadius: '12px',
+    fontSize: '15px',
+    color: '#0f2944',
+    background: '#fff',
+    outline: 'none',
     width: '100%',
     boxSizing: 'border-box',
   },

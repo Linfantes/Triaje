@@ -20,7 +20,7 @@ require_once("../conexion/config.php");
 
 $data = json_decode(file_get_contents("php://input"), true);
 
-if(!$data){
+if (!$data) {
 
     echo json_encode([
         "success" => false,
@@ -31,10 +31,13 @@ if(!$data){
 }
 
 $rol = $data['rol'] ?? '';
+$nombre = trim($data['nombre'] ?? '');
+$apellido = trim($data['apellido'] ?? '');
+$especialidad = trim($data['especialidad'] ?? '');
 $dni = trim($data['dni'] ?? '');
 $password = trim($data['password'] ?? '');
 
-if(empty($dni) || empty($password)){
+if (empty($dni) || empty($password)) {
 
     echo json_encode([
         "success" => false,
@@ -45,7 +48,7 @@ if(empty($dni) || empty($password)){
 }
 
 # Validar DNI
-if(!preg_match('/^[0-9]{8}$/', $dni)){
+if (!preg_match('/^[0-9]{8}$/', $dni)) {
 
     echo json_encode([
         "success" => false,
@@ -56,9 +59,9 @@ if(!preg_match('/^[0-9]{8}$/', $dni)){
 }
 
 # Contraseña segura
-if(
+if (
     !preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/', $password)
-){
+) {
 
     echo json_encode([
         "success" => false,
@@ -72,7 +75,7 @@ $hash = password_hash($password, PASSWORD_BCRYPT);
 
 try {
 
-    if($rol == "Doctor"){
+    if ($rol == "Doctor") {
 
         $sql = "INSERT INTO medico
         (dni, nombre, apellido, especialidad, usuario, clave_hash)
@@ -88,8 +91,7 @@ try {
             $dni,
             $hash
         ]);
-
-    } elseif($rol == "Admision") {
+    } elseif ($rol == "Admision") {
 
         $sql = "INSERT INTO personal_admision
         (dni, nombre, apellido, usuario, clave_hash)
@@ -99,12 +101,12 @@ try {
 
         $stmt->execute([
             $dni,
-            'Admision',
-            'Sistema',
+            $nombre,
+            $apellido,
+            $especialidad,
             $dni,
             $hash
         ]);
-
     } else {
 
         $sql = "INSERT INTO administrador
@@ -126,23 +128,19 @@ try {
         "success" => true,
         "mensaje" => "Usuario registrado correctamente"
     ]);
+} catch (PDOException $e) {
 
-} catch(PDOException $e){
-
-    if($e->getCode() == 23000){
+    if ($e->getCode() == 23000) {
 
         echo json_encode([
             "success" => false,
             "mensaje" => "El DNI ya se encuentra registrado"
         ]);
-
     } else {
 
         echo json_encode([
             "success" => false,
             "mensaje" => "Error interno del servidor"
         ]);
-
     }
-
 }
